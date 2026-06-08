@@ -1,0 +1,216 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+}
+
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-gold);
+  border-radius: 6px;
+  padding: 32px;
+  width: 100%;
+  max-width: 520px;
+  position: relative;
+  box-shadow:
+    0 0 0 1px rgba(201, 168, 76, 0.15),
+    0 0 40px rgba(201, 168, 76, 0.1),
+    0 24px 80px rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.panel::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  pointer-events: none;
+  border-radius: 3px;
+  z-index: 0;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.title {
+  font-family: 'Cinzel', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-gold);
+  letter-spacing: 0.06em;
+}
+
+.closeBtn {
+  font-size: 14px;
+  color: var(--text-muted);
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: color 0.1s;
+}
+
+.closeBtn:hover {
+  color: var(--text-gold);
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+  line-height: 1.6;
+  position: relative;
+  z-index: 1;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-gold);
+  flex: 1;
+}
+
+.row {
+  display: flex;
+  gap: 16px;
+}
+
+.input {
+  background: #080c14;
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 14px;
+  outline: none;
+  width: 100%;
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.input:focus {
+  border-color: var(--border-gold);
+  box-shadow: 0 0 0 2px rgba(201, 168, 76, 0.15), inset 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.hint {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-muted);
+}
+
+.hint a {
+  color: var(--border-gold);
+}
+
+.trackerList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.trackerItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.removeBtn {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.removeBtn:hover {
+  color: var(--red);
+}
+
+.addTracker {
+  display: flex;
+  gap: 8px;
+}
+
+.addTrackerBtn {
+  padding: 8px 14px;
+  background: var(--bg-raised);
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  transition: all 0.1s;
+}
+
+.addTrackerBtn:hover {
+  border-color: var(--border-gold);
+  color: var(--text-gold);
+}
+
+.error {
+  font-size: 13px;
+  color: var(--red);
+  background: rgba(217, 64, 64, 0.1);
+  border: 1px solid rgba(217, 64, 64, 0.3);
+  border-radius: 4px;
+  padding: 10px 14px;
+}
+
+.saveBtn {
+  padding: 12px;
+  background: linear-gradient(180deg, #e8c96d 0%, #9a6c1e 100%);
+  color: #140a00;
+  border-radius: 4px;
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: opacity 0.15s, box-shadow 0.15s;
+  box-shadow: 0 0 12px rgba(201, 168, 76, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.saveBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.saveBtn:not(:disabled):hover {
+  background: linear-gradient(180deg, #f5d878 0%, #b07c22 100%);
+  box-shadow: 0 0 20px rgba(201, 168, 76, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
