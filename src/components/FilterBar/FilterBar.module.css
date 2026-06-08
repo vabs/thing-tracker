@@ -1,0 +1,31 @@
+.bar {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  width: fit-content;
+}
+
+.btn {
+  font-family: 'Cinzel', serif;
+  padding: 4px 14px;
+  border-radius: 4px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 400;
+  transition: all 0.1s;
+}
+
+.btn:hover {
+  color: var(--text-gold);
+}
+
+.active {
+  background: var(--bg-raised);
+  color: var(--text-gold);
+  box-shadow: 0 0 0 1px var(--border-gold), 0 0 6px rgba(201, 168, 76, 0.2);
+}
