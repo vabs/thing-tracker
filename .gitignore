@@ -1,5 +1,9 @@
 node_modules/
 dist/
 .claude/
+.serena/
 *.local
 .DS_Store
+.env
+data.db
+data.db-*
