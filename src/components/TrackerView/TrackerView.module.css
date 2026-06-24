@@ -38,6 +38,12 @@
   font-style: italic;
 }
 
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .settingsBtn {
   font-size: 18px;
   color: var(--text-muted);

@@ -1,15 +1,25 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useAuth, UserButton } from '@clerk/clerk-react'
 import { FilterBar } from '../FilterBar/FilterBar'
 import { TrackerTable } from '../TrackerTable/TrackerTable'
-import { useIssues } from '../../hooks/useIssues'
+import { useTrackers } from '../../hooks/useTrackers'
+import { useRequests } from '../../hooks/useRequests'
 import styles from './TrackerView.module.css'
 
-export function TrackerView({ config, onOpenSettings }) {
-  const { owner, repo, trackers } = config
-  const [activeTracker, setActiveTracker] = useState(trackers[0] || 'Personal')
+export function TrackerView({ onOpenSettings }) {
+  const { getToken } = useAuth()
+  const { trackers } = useTrackers()
+  const [activeTracker, setActiveTracker] = useState(null)
   const [filter, setFilter] = useState('open')
 
-  const { issues, loading, error, addItem, patchItem } = useIssues(owner, repo, activeTracker, filter)
+  // Default to the first tracker once they load, and stay on a valid one.
+  useEffect(() => {
+    if (trackers.length && (!activeTracker || !trackers.includes(activeTracker))) {
+      setActiveTracker(trackers[0])
+    }
+  }, [trackers, activeTracker])
+
+  const { issues, loading, error, addItem, patchItem } = useRequests(activeTracker, filter, getToken)
 
   return (
     <div className={styles.view}>
@@ -21,9 +31,12 @@ export function TrackerView({ config, onOpenSettings }) {
             <em> The clearer you can be, the easier it is for everyone.</em>
           </div>
         </div>
-        <button className={styles.settingsBtn} onClick={onOpenSettings} title="Settings">
-          ⚙
-        </button>
+        <div className={styles.actions}>
+          <button className={styles.settingsBtn} onClick={onOpenSettings} title="Settings">
+            ⚙
+          </button>
+          <UserButton afterSignOutUrl="/" />
+        </div>
       </header>
 
       <div className={styles.toolbar}>

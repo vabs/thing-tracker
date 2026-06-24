@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
-import { fetchIssues, createIssue, updateIssue } from '../lib/github'
+import { useState, useCallback, useEffect } from 'react'
+import { fetchRequests, createRequest, updateRequest } from '../lib/api'
 
 function sortByDue(items) {
   return [...items].sort((a, b) => {
@@ -10,35 +10,35 @@ function sortByDue(items) {
   })
 }
 
-export function useIssues(owner, repo, tracker, filter) {
+export function useRequests(tracker, filter, getToken) {
   const [issues, setIssues] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
   const load = useCallback(async () => {
-    if (!owner || !repo || !tracker) return
+    if (!tracker) return
     setLoading(true)
     setError(null)
     try {
-      const data = await fetchIssues(owner, repo, tracker, filter)
+      const data = await fetchRequests(getToken, tracker, filter)
       setIssues(sortByDue(data))
     } catch (e) {
       setError(e.message)
     } finally {
       setLoading(false)
     }
-  }, [owner, repo, tracker, filter])
+  }, [tracker, filter, getToken])
 
   useEffect(() => { load() }, [load])
 
   async function addItem(item) {
-    const created = await createIssue(owner, repo, { ...item, tracker })
+    const created = await createRequest(getToken, { ...item, tracker })
     setIssues(prev => sortByDue([...prev, created]))
     return created
   }
 
   async function patchItem(id, updates) {
-    const updated = await updateIssue(owner, repo, id, updates)
+    const updated = await updateRequest(getToken, id, updates)
     if (filter !== 'all' && updates.isDone !== undefined) {
       setIssues(prev => prev.filter(i => i.id !== id))
     } else {
