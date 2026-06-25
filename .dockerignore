@@ -1,0 +1,17 @@
+node_modules
+dist
+.git
+.github
+.serena
+.claude
+.env
+.env.*
+!.env.example
+data.db
+data.db-*
+*.local
+.DS_Store
+npm-debug.log*
+Dockerfile
+.dockerignore
+README.md
