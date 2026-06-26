@@ -25,37 +25,32 @@ You can organize requests into named **trackers** (e.g. Personal, Work, Side Pro
 
 ## How It Works
 
-### GitHub Issues as a database
+### Architecture
 
-Thing Tracker has no backend and no database. Instead, it uses **GitHub Issues** on a repository you control:
-
-- Each request = one GitHub Issue
-- The issue **title** = description of the ask
-- The issue **labels** = tracker name (`tracker:Work`) and person (`person:Sonya`)
-- The issue **body** = structured metadata block containing the due date
-- Issue **state** (open/closed) = pending/done
-- Issue **created_at** = the date you asked
-
-The due date is stored in the issue body as a hidden comment block:
+Thing Tracker is a React/Vite frontend backed by a small **Hono** API that stores everything in a **SQLite** database. Users sign in with **Clerk**, and all data is scoped per user.
 
 ```
-<!-- meta
-due: 2026-06-15
--->
+React/Vite frontend  (@clerk/clerk-react)
+   │  fetch /api/* with  Authorization: Bearer <Clerk session token>
+   ▼
+Hono backend  (server/)
+   │  clerkMiddleware() -> userId   (401 if absent)
+   ▼
+better-sqlite3  ->  data.db   (requests + trackers, every query scoped by user_id)
 ```
 
-This keeps the GitHub Issues UI clean while allowing the app to parse metadata on every fetch.
+- Each request is a row in the `requests` table.
+- The signed-in **Clerk user** owns their rows — the backend verifies the session token on every call and filters every query by `user_id`, so users only ever see their own data.
+- A small `trackers` table holds each user's named trackers. A new user is seeded with **Personal** and **Work** on first sign-in.
 
-### Label strategy
+### Data model
 
-Two label namespaces are used:
+```sql
+requests(id, user_id, description, person, tracker, asked_date, due_date, is_done)
+trackers(user_id, name)
+```
 
-| Label | Purpose |
-|---|---|
-| `tracker:Personal` | Groups issues into a named tracker |
-| `person:Sonya` | Records who was asked |
-
-Labels are created automatically when you first use a tracker or person name.
+`is_done` drives the Open/Closed/All filter; `asked_date` is set to the day the request is created; `due_date` is the cell you pick on the timeline grid.
 
 ### Visual timeline grid
 
@@ -80,87 +75,64 @@ Clicking any cell on a row sets that cell as the new due date.
 
 | Layer | Choice |
 |---|---|
-| Framework | React 18 + Vite |
+| Frontend | React 18 + Vite |
 | Styling | CSS Modules |
-| GitHub API | Octokit (`@octokit/rest`) |
-| Auth | Personal Access Token stored in `localStorage` |
-| Hosting | GitHub Pages (static) |
-| CI/CD | GitHub Actions |
+| Backend | Hono (`@hono/node-server`) |
+| Database | SQLite (`better-sqlite3`) |
+| Auth | Clerk (`@clerk/clerk-react` + `@hono/clerk-auth`) |
 
 ---
 
-## Hosting Your Own Instance
-
-### Step 1 — Fork the repository
-
-Click **Fork** on this repository. Your fork will be at:
-```
-https://github.com/YOUR_USERNAME/thing-tracker
-```
-
-### Step 2 — Enable GitHub Pages
-
-1. Go to your fork → **Settings** → **Pages**
-2. Under **Source**, select **GitHub Actions**
-3. Save
-
-The included workflow (`.github/workflows/deploy.yml`) will automatically build and deploy the app every time you push to `main`.
-
-### Step 3 — Create a Personal Access Token
-
-1. Go to [GitHub Settings → Tokens](https://github.com/settings/tokens/new?scopes=repo)
-2. Give it a name (e.g. `thing-tracker`)
-3. Select the **`repo`** scope (needed to read/write issues and labels)
-4. Click **Generate token** and copy it
-
-> **Keep this token private.** It is stored only in your browser's `localStorage` and is never sent anywhere except the GitHub API.
-
-### Step 4 — Open the app and configure it
-
-Visit your deployed app at:
-```
-https://YOUR_USERNAME.github.io/thing-tracker/
-```
-
-On first load, a setup screen will appear. Enter:
-- Your **Personal Access Token**
-- Your **GitHub username**
-- The **repository name** (e.g. `thing-tracker`)
-- Your desired **tracker names** (default: Personal, Work)
-
-Click **Save & continue**. The app verifies access and creates the tracker labels in your repo.
-
----
-
-## Local Development
+## Setup
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 22+ (uses `node --env-file` and `--watch`)
 - npm
+- A free [Clerk](https://dashboard.clerk.com) application
 
-### Setup
+### Step 1 — Install
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/thing-tracker.git
 cd thing-tracker
 npm install
+```
+
+### Step 2 — Configure Clerk
+
+Create an application in the [Clerk dashboard](https://dashboard.clerk.com), then copy `.env.example` to `.env` and fill in your keys:
+
+```bash
+cp .env.example .env
+```
+
+```
+VITE_CLERK_PUBLISHABLE_KEY=pk_test_xxx   # frontend (Clerk React)
+CLERK_PUBLISHABLE_KEY=pk_test_xxx        # backend (clerkMiddleware)
+CLERK_SECRET_KEY=sk_test_xxx             # backend (JWT verification)
+PORT=8787
+DB_PATH=./data.db
+```
+
+> Only `VITE_`-prefixed vars are exposed to the browser, so the secret key never reaches the client. `.env` and `data.db` are gitignored.
+
+### Step 3 — Run
+
+```bash
 npm run dev
 ```
 
-The app runs at `http://localhost:5173`. On first load, enter your PAT and repo details in the settings screen.
+This starts the API on `:8787` and Vite on `http://localhost:5173` (which proxies `/api` to the backend). Open the Vite URL, sign in with Clerk, and you'll land on your tracker with **Personal** and **Work** tabs.
 
-### Build
-
-```bash
-npm run build
-```
-
-Output goes to `dist/`. To preview the production build locally:
+### Build & run production
 
 ```bash
-npm run preview
+npm run build   # builds the frontend into dist/
+npm start       # serves dist/ + /api from a single Hono process on :8787
 ```
+
+To deploy, run this single Node process on a host with a persistent disk for `data.db` (e.g. Fly.io or Railway with a mounted volume).
 
 ---
 
@@ -168,25 +140,26 @@ npm run preview
 
 ```
 thing-tracker/
-├── .github/
-│   └── workflows/
-│       └── deploy.yml          # CI: push to main → build → GitHub Pages
+├── server/
+│   ├── index.js                # Hono app: Clerk auth, /api routes, static serving
+│   └── db.js                   # better-sqlite3: schema + per-user query functions
 ├── src/
 │   ├── lib/
 │   │   ├── dateUtils.js        # Grid cell math, date formatting
-│   │   └── github.js           # Octokit wrapper — issue CRUD, label management
+│   │   └── api.js              # fetch wrapper — attaches Clerk token, calls /api
 │   ├── hooks/
-│   │   ├── useConfig.js        # PAT / owner / repo stored in localStorage
-│   │   └── useIssues.js        # Fetch, create, and update issues
+│   │   ├── useTrackers.js      # Per-user tracker list (API-backed)
+│   │   └── useRequests.js      # Fetch, create, and update requests
 │   └── components/
-│       ├── App/                # Root component, config gate
-│       ├── Settings/           # First-time setup and tracker management
-│       ├── TrackerView/        # Tracker tabs + filter bar layout
+│       ├── App/                # Root component, Clerk auth gate
+│       ├── Settings/           # Tracker management modal
+│       ├── TrackerView/        # Tracker tabs + filter bar + UserButton
 │       ├── TrackerTable/       # Table header and row list
 │       ├── TrackerRow/         # Single request row with inline editing
 │       ├── NewRow/             # Inline add-request form
 │       ├── DateGrid/           # 5d/4w/3m visual timeline and date picker
 │       └── FilterBar/          # All / Open / Closed filter
+├── .env.example
 ├── index.html
 ├── vite.config.js
 └── package.json
@@ -202,21 +175,21 @@ Click **+ Add** at the bottom of the table. A new row appears inline — type th
 
 ### Editing a request
 
-Click any description or person name to edit it inline. Click a grid cell to change the due date. All changes save to GitHub Issues immediately.
+Click any description or person name to edit it inline. Click a grid cell to change the due date. All changes save to the database immediately.
 
 ### Marking done
 
-Click the **✓** button on the right side of any row. The row gets a dashed style and the underlying GitHub Issue is closed. Click **↩** to reopen.
+Click the **✓** button on the right side of any row. The row gets a dashed style and is marked done (`is_done = 1`). Click **↩** to reopen.
 
 ### Managing trackers
 
-Click the **⚙** settings icon in the top right to add or remove trackers. Adding a tracker creates a new `tracker:Name` label in your GitHub repo.
+Click the **⚙** settings icon in the top right to add or remove trackers. Sign out via the Clerk **user button** next to it.
 
 ---
 
 ## Privacy
 
-All data lives in **your GitHub repository** as issues. The app is a static site with no server — it talks directly to the GitHub API using your Personal Access Token, which is stored only in your browser's `localStorage`. No data is sent to any third-party service.
+All data lives in **your** SQLite database, behind Clerk authentication. The backend verifies each user's Clerk session token and scopes every query to their `user_id`, so users can only read and write their own requests. No data is sent to any third-party service beyond Clerk (for authentication).
 
 ---
 
